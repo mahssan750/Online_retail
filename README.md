@@ -1,190 +1,132 @@
-# Online_retail
-An end-to-end analytical data pipeline implementing a Bronze–Silver–Gold architecture for retail transactional data, designed to support business reporting, analytics, and decision-making.
+# End-to-End Analytical Data Pipeline: Bronze–Silver–Gold Architecture for Retail Transactional Data
 
-1. Project Context (Problem Framing)
+This project implements a medallion architecture (Bronze → Silver → Gold) for processing retail transactional data, designed to support business reporting, analytics, and decision-making. The entire pipeline is built using T-SQL for scalability and integration with SQL-based systems.
 
-This project analyzes a large-scale transactional dataset from a UK-based online retailer operating between Dec 2010 and Dec 2011.
-The dataset represents real-world retail complexity:
+## 1. Project Context (Problem Framing)
 
-High transaction volume
+This project analyzes a large-scale transactional dataset from a UK-based online retailer operating between December 2010 and December 2011. The dataset represents real-world retail complexity, including:
 
-Mixed product types (physical items, postage, fees, manual adjustments)
+- High transaction volume
+- Mixed product types (physical items, postage, fees, manual adjustments)
+- Cancellations and corrections
+- Wholesale behavior (large quantities, high invoice values)
+- Missing customer identifiers
+- Multi-country sales
 
-Cancellations and corrections
+The objective is to transform raw transactional data into business-ready analytical models using a medallion architecture (Bronze → Silver → Gold), implemented entirely in T-SQL.
 
-Wholesale behavior (large quantities, high invoice values)
+## 2. Overall Project Objective (High-Level)
 
-Missing customer identifiers
+To design and implement a scalable Gold Layer in T-SQL that converts cleaned transactional data into business-ready analytical tables, enabling revenue analysis, customer behavior analysis, product performance evaluation, and time-based insights.
 
-Multi-country sales
+## 3. What the Gold Layer Represents (Conceptual)
 
-The objective is to transform raw transactional data into business-ready analytical models using a medallion architecture (Silver → Gold) implemented entirely in T-SQL.
+The Gold Layer should be treated as:
 
+- No raw fields
+- No row-level noise
+- Only business questions answered
+- Pre-aggregated and optimized for BI/reporting
+- Gold tables answer questions, not store events
 
-2. Overall Project Objective (High-Level)
+## 4. Gold Layer Core Objectives (What You Should Build)
 
-To design and implement a scalable Gold Layer in T-SQL that converts cleaned transactional data into business-ready analytical tables enabling revenue analysis, customer behavior analysis, product performance evaluation, and time-based insights.
+### Objective 1: Revenue & Sales Performance
 
-3. What the Gold Layer Represents (Conceptual)
-
-You should mentally treat the Gold Layer as:
-
-No raw fields
-
-No row-level noise
-
-Only business questions answered
-
-Pre-aggregated, optimized for BI / reporting
-
-Gold tables answer questions, not store events.
-
-4. Gold Layer Core Objectives (What You Should Build)
-Objective 1: Revenue & Sales Performance
-
-Business Question
-
+**Business Question**  
 How much revenue is generated, when, and from where?
 
-Gold Objectives
+**Gold Objectives**  
+- Daily, monthly, and yearly revenue trends
+- Revenue by country
+- Revenue by invoice (order-level metrics)
 
-Daily, monthly, and yearly revenue trends
+**Key Metrics**  
+- Total Revenue
+- Number of Orders
+- Average Order Value (AOV)
+- Revenue per Country
+- Revenue per Month
 
-Revenue by country
+**Gold Tables**  
+- `gold.fact_sales_daily`  
+- `gold.fact_sales_monthly`  
+- `gold.fact_sales_country`
 
-Revenue by invoice (order-level metrics)
+### Objective 2: Customer Analytics
 
-Key Metrics
-
-Total Revenue
-
-Number of Orders
-
-Average Order Value (AOV)
-
-Revenue per Country
-
-Revenue per Month
-
-Gold Tables
-
-gold.fact_sales_daily
-
-gold.fact_sales_monthly
-
-gold.fact_sales_country
-
-Objective 2: Customer Analytics
-
-Business Question
-
+**Business Question**  
 Who are the valuable customers and how do they behave?
 
-Gold Objectives
+**Gold Objectives**  
+- Identify high-value customers (wholesalers vs. retail)
+- Customer purchasing frequency
+- Customer lifetime value (basic CLV proxy)
 
-Identify high-value customers (wholesalers vs retail)
+**Key Metrics**  
+- Total Spend per Customer
+- Number of Invoices
+- Average Basket Size
+- First Purchase Date
+- Last Purchase Date
 
-Customer purchasing frequency
+**Gold Tables**  
+- `gold.dim_customer`  
+- `gold.fact_customer_value`
 
-Customer lifetime value (basic CLV proxy)
+**Important Note**  
+Customers with NULL `CustomerID` should be excluded or isolated, not mixed.
 
-Key Metrics
+### Objective 3: Product Performance
 
-Total Spend per Customer
-
-Number of Invoices
-
-Average Basket Size
-
-First Purchase Date
-
-Last Purchase Date
-
-Gold Tables
-
-gold.dim_customer
-
-gold.fact_customer_value
-
-Important Note
-Customers with NULL CustomerID should be excluded or isolated, not mixed.
-
-Objective 3: Product Performance
-
-Business Question
-
+**Business Question**  
 Which products drive revenue and volume?
 
-Gold Objectives
+**Gold Objectives**  
+- Top products by revenue
+- Top products by quantity sold
+- Identify bulk/wholesale items
+- Detect low-margin high-volume items
 
-Top products by revenue
+**Key Metrics**  
+- Total Quantity Sold
+- Total Revenue per Product
+- Average Unit Price
+- Revenue Contribution %
 
-Top products by quantity sold
+**Gold Tables**  
+- `gold.dim_product`  
+- `gold.fact_product_sales`
 
-Identify bulk/wholesale items
+### Objective 4: Time-Based & Seasonality Analysis
 
-Detect low-margin high-volume items
-
-Key Metrics
-
-Total Quantity Sold
-
-Total Revenue per Product
-
-Average Unit Price
-
-Revenue Contribution %
-
-Gold Tables
-
-gold.dim_product
-
-gold.fact_product_sales
-
-Objective 4: Time-Based & Seasonality Analysis
-
-Business Question
-
+**Business Question**  
 When do customers buy and how does seasonality affect sales?
 
-Gold Objectives
+**Gold Objectives**  
+- Month-over-month trends
+- Day-of-week behavior
+- Hour-of-day patterns
 
-Month-over-month trends
+**Key Metrics**  
+- Revenue by Month
+- Revenue by Weekday
+- Revenue by Hour
 
-Day-of-week behavior
+**Gold Tables**  
+- `gold.dim_date`  
+- `gold.fact_time_analysis`
 
-Hour-of-day patterns
+### Objective 5: Data Quality & Business Rules Enforcement
 
-Key Metrics
-
-Revenue by Month
-
-Revenue by Weekday
-
-Revenue by Hour
-
-Gold Tables
-
-gold.dim_date
-
-gold.fact_time_analysis
-
-Objective 5: Data Quality & Business Rules Enforcement
-
-Business Question
-
+**Business Question**  
 Can the data be trusted for decision-making?
 
-Gold Objectives
+**Gold Objectives**  
+- Exclude cancellations (`InvoiceNo` LIKE 'C%')
+- Exclude zero or negative revenue rows
+- Separate operational charges (postage, manual, fees)
+- Ensure one business meaning per table
 
-Exclude cancellations (InvoiceNo LIKE 'C%')
-
-Exclude zero or negative revenue rows
-
-Separate operational charges (postage, manual, fees)
-
-Ensure one business meaning per table
-
-Gold Outcome
-
+**Gold Outcome**  
 Executives can query Gold tables without knowing raw data quirks
