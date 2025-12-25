@@ -29,8 +29,7 @@ The Gold Layer should be treated as:
 - Pre-aggregated and optimized for BI/reporting
 - Gold tables answer questions, not store events
 
-## 4. Gold Layer Core Objectives (What You Should Build)
-
+## 4. Gold Layer Core Objectives 
 ### Objective 1: Revenue & Sales Performance
 
 **Business Question**  
@@ -70,12 +69,8 @@ Who are the valuable customers and how do they behave?
 - First Purchase Date
 - Last Purchase Date
 
-**Gold Tables**  
-- `gold.dim_customer`  
+**Gold Table**  
 - `gold.fact_customer_value`
-
-**Important Note**  
-Customers with NULL `CustomerID` should be excluded or isolated, not mixed.
 
 ### Objective 3: Product Performance
 
