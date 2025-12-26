@@ -1,127 +1,196 @@
-# End-to-End Analytical Data Pipeline: Bronze–Silver–Gold Architecture for Retail Transactional Data
+# End-to-End Analytical Data Pipeline  
+## Bronze–Silver–Gold (Medallion) Architecture for Retail Transactional Data
 
-This project implements a medallion architecture (Bronze → Silver → Gold) for processing retail transactional data, designed to support business reporting, analytics, and decision-making. The entire pipeline is built using T-SQL for scalability and integration with SQL-based systems.
+This project implements an **end-to-end analytical data pipeline** using the **Medallion Architecture (Bronze → Silver → Gold)** to process large-scale retail transactional data.  
+The pipeline is built **entirely in T-SQL**, designed to transform raw transaction records into **business-ready analytical models** optimized for reporting, analytics, and decision-making.
 
-## 1. Project Context (Problem Framing)
+---
 
-This project analyzes a large-scale (more than half milion Transactions) transactional dataset from a UK-based online retailer operating between December 2010 and December 2011. The dataset represents real-world retail complexity, including:
+## 1. Project Context
 
+The dataset contains **over half a million transactions** from a UK-based non-store online retailer operating between **December 2010 and December 2011**.
+
+The data reflects real-world retail complexity, including:
 - High transaction volume
-- Mixed product types (physical items, postage, fees, manual adjustments)
-- Cancellations and corrections
-- Wholesale behavior (large quantities, high invoice values)
+- Mixed product types (physical goods, postage, fees, manual adjustments)
+- Invoice cancellations and corrections
+- Wholesale purchasing behavior (large quantities, high invoice values)
 - Missing customer identifiers
-- Multi-country sales
+- Multi-country sales activity
 
-The objective is to transform raw transactional data into business-ready analytical models using a medallion architecture (Bronze → Silver → Gold), implemented entirely in T-SQL.
+The project demonstrates how to **systematically clean, standardize, and aggregate transactional data** using a layered architecture suitable for enterprise analytics.
 
-## 2. Overall Project Objective (High-Level)
+---
 
-To design and implement a scalable Gold Layer in T-SQL that converts cleaned transactional data into business-ready analytical tables, enabling revenue analysis, customer behavior analysis, product performance evaluation, and time-based insights.
+## 2. Medallion Architecture Overview
 
-## 3. What the Gold Layer Represents (Conceptual)
+The Medallion Architecture organizes data into **three logical layers**, each with a clear responsibility:
 
-The Gold Layer should be treated as:
+### 🥉 Bronze Layer — Raw Ingestion
+- Stores data **as received** from the source
+- Minimal or no transformation
+- Preserves original structure and values
+- Acts as a historical record of raw data
 
-- No raw fields
-- No row-level noise
-- Only business questions answered
-- Pre-aggregated and optimized for BI/reporting
-- Gold tables answer questions, not store events
+**Purpose:** Data capture and traceability
 
-## 4. Gold Layer Core Objectives 
-### Objective 1: Revenue & Sales Performance
+---
 
-**Business Question**  
+### 🥈 Silver Layer — Cleaned & Standardized Data
+- Applies data cleaning and validation rules
+- Standardizes data types and formats
+- Removes duplicates
+- Handles nulls and invalid records
+- Applies business rules (e.g., cancellations, invalid prices)
+
+**Purpose:** Provide a reliable, analysis-ready transactional dataset
+
+---
+
+### 🥇 Gold Layer — Business-Ready Analytics
+- Fully aggregated and curated tables
+- Optimized for BI tools and reporting
+- No raw fields or row-level noise
+- Each table answers a specific business question
+
+**Purpose:** Enable fast, trusted analytics and decision-making
+
+> **Gold tables answer questions — they do not store events.**
+
+---
+
+## 3. Project Objective
+
+The primary objective of this project is to:
+
+> **Design and implement a scalable Gold Layer in T-SQL that transforms cleaned transactional data into business-ready analytical tables, enabling sales analysis, customer analytics, product performance evaluation, and time-based insights.**
+
+---
+
+## 4. Data Layers and Tables
+
+### Bronze Layer (Raw Data)
+**Description:** Source-aligned storage of transactional records.
+
+**Typical Tables:**
+- `bronze.fact_transactions_raw`
+
+---
+
+### Silver Layer (Cleaned & Conformed Data)
+**Description:** Transaction-level data with enforced data quality and business rules.
+
+**Key Transformations:**
+- Remove cancelled invoices (`InvoiceNo LIKE 'C%'`)
+- Enforce valid revenue (`Quantity * UnitPrice > 0`)
+- Standardize date/time formats
+- Preserve NULL `CustomerID` where applicable
+
+**Typical Tables:**
+- `silver.fact_main`
+
+---
+
+### Gold Layer (Analytical Models)
+
+#### 4.1 Sales & Revenue Analysis
+**Business Question:**  
 How much revenue is generated, when, and from where?
 
-**Gold Objectives**  
-- Daily, monthly, and yearly revenue trends
-- Revenue by country
-- Revenue by invoice (order-level metrics)
+**Tables:**
+- `gold.fact_sales_daily`
+- `gold.fact_sales_monthly`
+- `gold.fact_sales_country`
 
-**Key Metrics**  
+**Key Metrics:**
 - Total Revenue
 - Number of Orders
 - Average Order Value (AOV)
-- Revenue per Country
-- Revenue per Month
+- Revenue by Country
+- Revenue by Time Period
 
-**Gold Tables**  
-- `gold.fact_sales_daily`  
-- `gold.fact_sales_monthly`  
-- `gold.fact_sales_country`
+---
 
-### Objective 2: Customer Analytics
+#### 4.2 Customer Analytics
+**Business Question:**  
+Who are the most valuable customers and how do they behave?
 
-**Business Question**  
-Who are the valuable customers and how do they behave?
+**Tables:**
+- `gold.fact_customer_value`
 
-**Gold Objectives**  
-- Identify high-value customers (wholesalers vs. retail)
-- Customer purchasing frequency
-- Customer lifetime value (basic CLV proxy)
-
-**Key Metrics**  
+**Key Metrics:**
 - Total Spend per Customer
 - Number of Invoices
 - Average Basket Size
-- First Purchase Date
-- Last Purchase Date
+- First and Last Purchase Dates
 
-**Gold Table**  
-- `gold.fact_customer_value`
+> Transactions with `NULL CustomerID` contribute to revenue but are excluded from customer-level analytics.
 
-### Objective 3: Product Performance
+---
 
-**Business Question**  
-Which products drive revenue and volume?
+#### 4.3 Product Performance
+**Business Question:**  
+Which products drive revenue and sales volume?
 
-**Gold Objectives**  
-- Top products by revenue
-- Top products by quantity sold
-- Identify bulk/wholesale items
-- Detect low-margin high-volume items
+**Tables:**
+- `gold.dim_product`
+- `gold.fact_product_sales`
 
-**Key Metrics**  
+**Key Metrics:**
 - Total Quantity Sold
 - Total Revenue per Product
 - Average Unit Price
-- Revenue Contribution %
+- Revenue Contribution Percentage
 
-**Gold Tables**  
-- `gold.dim_product`  
-- `gold.fact_product_sales`
+---
 
-### Objective 4: Time-Based & Seasonality Analysis
+#### 4.4 Time-Based & Seasonality Analysis
+**Business Question:**  
+When do customers buy, and how does seasonality affect sales?
 
-**Business Question**  
-When do customers buy and how does seasonality affect sales?
-
-**Gold Objectives**  
-- Month-over-month trends
-- Day-of-week behavior
-- Hour-of-day patterns
-
-**Key Metrics**  
-- Revenue by Month
-- Revenue by Weekday
-- Revenue by Hour
-
-**Gold Tables**  
-- `gold.dim_date`  
+**Tables:**
+- `gold.dim_date`
 - `gold.fact_time_analysis`
 
-### Objective 5: Data Quality & Business Rules Enforcement
+**Key Metrics:**
+- Revenue by Month
+- Revenue by Day of Week
+- Revenue by Hour of Day
 
-**Business Question**  
-Can the data be trusted for decision-making?
+---
 
-**Gold Objectives**  
-- Exclude cancellations (`InvoiceNo` LIKE 'C%')
-- Exclude zero or negative revenue rows
-- Separate operational charges (postage, manual, fees)
-- Ensure one business meaning per table
+## 5. Data Quality & Business Rules
 
-**Gold Outcome**  
-Executives can query Gold tables without knowing raw data quirks
+To ensure trust and analytical accuracy, the Gold Layer enforces:
+
+- Exclusion of cancelled invoices
+- Exclusion of zero or negative revenue rows
+- Separation of operational charges (postage, fees, manual adjustments)
+- Clear table grain (one business meaning per table)
+
+**Outcome:**  
+Business users can query Gold tables **without needing to understand raw data quirks or operational anomalies**.
+
+---
+
+## 6. Technology Stack
+
+- **SQL Server**
+- **T-SQL**
+- Medallion Architecture (Bronze–Silver–Gold)
+
+---
+
+## 7. Intended Use
+
+This project is suitable for:
+- BI reporting (Power BI, Tableau)
+- Sales and customer analytics
+- Portfolio demonstration of SQL-based data engineering skills
+- Retail analytics case studies
+
+---
+
+## 8. Key Takeaway
+
+This repository demonstrates how **raw transactional data** can be transformed into **trusted, high-performance analytical models** using a disciplined, scalable data architecture — implemented entirely in SQL.
