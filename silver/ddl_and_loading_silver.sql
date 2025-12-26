@@ -24,7 +24,7 @@ CREATE TABLE silver.fact_main(
 );
 GO
 --------------------------------------------------------	
--- Load data into silver.fact_main from bronze.main table
+-- Load data into silver.fact_main from bronze.fact_transactions_raw table
 --------------------------------------------------------
 --Ctreate Stored Procedure: LoadSilverMain
 CREATE OR ALTER PROCEDURE LoadSilverMain
@@ -84,7 +84,7 @@ FROM(
                             ORDER BY
                             InvoiceDate
                             )rn
-    FROM bronze.main
+    FROM bronze.fact_transactions_raw
 )t WHERE rn = 1
 END
 
