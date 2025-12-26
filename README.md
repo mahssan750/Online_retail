@@ -4,7 +4,7 @@ This project implements a medallion architecture (Bronze → Silver → Gold) fo
 
 ## 1. Project Context (Problem Framing)
 
-This project analyzes a large-scale transactional dataset from a UK-based online retailer operating between December 2010 and December 2011. The dataset represents real-world retail complexity, including:
+This project analyzes a large-scale (more than half milion rows) transactional dataset from a UK-based online retailer operating between December 2010 and December 2011. The dataset represents real-world retail complexity, including:
 
 - High transaction volume
 - Mixed product types (physical items, postage, fees, manual adjustments)
