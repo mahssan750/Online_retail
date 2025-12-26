@@ -32,24 +32,24 @@ GROUP BY InvoiceNo,
     HAVING COUNT(*) >= 2;
 ------------------------------------
 SELECT TOP 50 *
-FROM bronze.main 
+FROM bronze.fact_transactions_raw 
 -------------------------------------------------
 SELECT COUNT(*) --total_rows = 541909
-FROM bronze.main 
+FROM bronze.fact_transactions_raw 
 -------------------------------------------------
 SELECT COUNT(main.CustomerID)
-FROM bronze.main -- 406829 #Less than total rows
+FROM bronze.fact_transactions_raw -- 406829 #Less than total rows
 -------------------------------------------------
 SELECT COUNT(main.Description)
-FROM bronze.main -- 540455 #Less than total rows
+FROM bronze.fact_transactions_raw -- 540455 #Less than total rows
 --NULLS IN CustomerID & Description 
 -------------------------------------------------
 SELECT *
-FROM bronze.main
+FROM bronze.fact_transactions_raw
 WHERE Quantity < 0 --There is qty less than 0 Which is unexpected
 -------------------------------------------------
 SELECT COUNT(*) [qty < 0] --Count of Quantity less than 0
-FROM bronze.main
+FROM bronze.fact_transactions_raw
 WHERE Quantity < 0  -- QTY<0 = 10624 Which is unexpected > 
 -- It seems that qty < 0 means Item return
 -------------------------------------------------
@@ -78,7 +78,7 @@ WHERE InvoiceNo LIKE 'C%';
 -- When InvoiceNo starts with 'C' QUANTITY IS LESS THAN 0 then it indicates a return of item process
 
 SELECT TOP 100 *
-FROM bronze.main
+FROM bronze.fact_transactions_raw
 WHERE InvoiceNo LIKE 'A%'; 
 -- WHEN INVOICE_NO STARTS WITH A its descriptions is  'Adjust bad debt' and CUSTOMERID IS NULL
 
