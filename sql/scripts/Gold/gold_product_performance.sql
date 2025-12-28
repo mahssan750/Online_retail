@@ -1,6 +1,41 @@
 /*=====================================================
-    gold.fact_product_sales
-    Grain: One row per product
+GOLD LAYER — PRODUCT-LEVEL SALES FACT TABLE
+File: gold_fact_product_sales.sql
+------------
+Description:
+This script builds a product-level aggregated sales
+fact table (gold.fact_product_sales) using the
+conformed Silver star schema.
+-----------
+Grain:
+One row per product
+Purpose:
+Aggregate transactional sales data by product
+Enable product performance analysis for
+revenue, quantity sold, pricing, and
+overall contribution
+Support BI dashboards and product comparisons
+-----------
+Key Metrics:
+Total quantity sold
+Total revenue
+Average unit price (weighted)
+Revenue contribution percentage
+------------
+Design Notes:
+Uses surrogate keys from silver.fact_sales
+(Product_SK) to ensure referential integrity
+All measures are derived from validated,
+line-level sales facts
+Revenue contribution is calculated as a
+percentage of grand total revenue across all products
+Employs CTEs for aggregation and total revenue calculation
+Source Tables:
+silver.fact_sales
+Target Table:
+gold.fact_product_sales
+Layer:
+GOLD (Analytics-ready, aggregated data)
 =====================================================*/
 IF OBJECT_ID('gold.fact_product_sales', 'U') IS NOT NULL
     DROP TABLE gold.fact_product_sales;
