@@ -1,6 +1,49 @@
---====================================================
--- GOLD: Customer-level fact table
---====================================================
+/*=====================================================
+  GOLD LAYER — CUSTOMER ANALYTICS FACT TABLE
+  File: gold_fact_customer.sql
+
+  Description:
+  This script builds a customer-level fact table
+  (gold.fact_customer) using the conformed Silver
+  star schema.
+
+  Grain:
+  - One row per customer (CustomerID)
+
+  Purpose:
+  - Aggregate transactional sales data to the
+    customer level
+  - Produce analytics-ready customer KPIs for
+    reporting, segmentation, and BI use cases
+
+  Key Metrics:
+  - Total orders and total spend
+  - Total quantity purchased
+  - Unique products purchased
+  - Average Order Value (AOV)
+  - Average Basket Size
+  - First and last purchase dates
+  - Customer tenure (lifetime in days)
+
+  Business Logic:
+  - Customer classification into Retail vs Wholesale
+    based on lifetime quantity purchased
+  - Uses surrogate keys from silver.fact_sales
+    and conformed dimensions (date, customer)
+
+  Source Tables:
+  - silver.fact_sales
+  - silver.dim_customer
+  - silver.dim_date
+
+  Target Table:
+  - gold.fact_customer
+
+  Layer:
+  - GOLD (Analytics-ready, aggregated data)
+
+=====================================================*/
+
 IF OBJECT_ID('gold.fact_customer', 'U') IS NOT NULL
     DROP TABLE gold.fact_customer;
 GO
