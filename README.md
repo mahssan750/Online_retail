@@ -170,7 +170,6 @@ Who are the most valuable customers and how do they behave?
 Which products drive revenue and sales volume?
 
 **Tables:**
-- `gold.dim_product`
 - `gold.fact_product_sales`
 
 **Key Metrics:**
@@ -186,7 +185,6 @@ Which products drive revenue and sales volume?
 When do customers buy, and how does seasonality affect sales?
 
 **Tables:**
-- `gold.dim_date`
 - `gold.fact_time_analysis`
 
 **Key Metrics:**
