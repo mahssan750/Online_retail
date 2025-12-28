@@ -1,6 +1,50 @@
 /*=====================================================
-        gold.fact_sales_country  
+  GOLD LAYER — COUNTRY-LEVEL SALES FACT TABLE
+  File: gold_fact_sales_country.sql
+
+  Description:
+  This script builds a country-level aggregated sales
+  fact table (gold.fact_sales_country) using the
+  conformed Silver star schema.
+
+  Grain:
+  - One row per country
+
+  Purpose:
+  - Aggregate transactional sales data by country
+  - Enable geographic performance analysis for
+    revenue, order volume, customer reach, and
+    product diversity
+  - Support BI dashboards and regional comparisons
+
+  Key Metrics:
+  - Total orders and total revenue
+  - Average order value (AOV)
+  - Unique customers per country
+  - Total quantity sold
+  - Unique products sold
+  - Invoice row count for data quality checks
+
+  Design Notes:
+  - Uses surrogate keys from silver.fact_sales
+    (Country_SK) to ensure referential integrity
+  - Country attributes are sourced from
+    silver.dim_country
+  - All measures are derived from validated,
+    line-level sales facts
+
+  Source Tables:
+  - silver.fact_sales
+  - silver.dim_country
+
+  Target Table:
+  - gold.fact_sales_country
+
+  Layer:
+  - GOLD (Analytics-ready, aggregated data)
+
 =====================================================*/
+
 IF OBJECT_ID('gold.fact_sales_country', 'U') IS NOT NULL
     DROP TABLE gold.fact_sales_country;
 GO
