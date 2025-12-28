@@ -80,14 +80,51 @@ The primary objective of this project is to:
 ### Silver Layer (Cleaned & Conformed Data)
 **Description:** Transaction-level data with enforced data quality and business rules.
 
-**Key Transformations:**
-- Remove cancelled invoices (`InvoiceNo LIKE 'C%'`)
-- Enforce valid revenue (`Quantity * UnitPrice > 0`)
-- Standardize date/time formats
-- Preserve NULL `CustomerID` where applicable
+#### Silver Layer Data Model
+The Silver layer is implemented using a **Star Schema**, consisting of one central fact table and multiple conformed dimensions.
 
-**Typical Tables:**
-- `silver.fact_main`
+**Key Transformations:**
+- Remove duplicate transaction rows
+- Exclude cancelled invoices (`InvoiceNo LIKE 'C%'`)
+- Enforce valid revenue logic (`Quantity > 0` and `UnitPrice > 0`)
+- Standardize date and time formats
+- Preserve `NULL` `CustomerID` values to support guest checkouts
+- Resolve natural keys into surrogate keys during fact loading
+
+
+**Fact Tables:**
+
+- **`silver.fact_main`**  
+  - Deduplicated transactional source table  
+  - One row per raw invoice line  
+  - Acts as the canonical cleaned dataset in Silver
+
+- **`silver.fact_sales`**  
+  - Analytical fact table  
+  - Grain: **one row per invoice line (Product × Invoice × Date)**  
+  - Stores measurable metrics such as quantity, unit price, and line-level revenue  
+  - Uses surrogate keys to reference all dimensions
+
+---
+**Dimension Tables:**
+
+- **`silver.dim_product`**  
+  - Product master data  
+  - Attributes include stock code, product name, and first-seen date
+
+- **`silver.dim_customer`**  
+  - Customer master data  
+  - Tracks customer purchase lifecycle (first and last purchase dates)  
+  - Supports nullable customers (guest transactions)
+
+- **`silver.dim_country`**  
+  - Conformed geographic dimension  
+  - One row per country with enforced uniqueness
+
+- **`silver.dim_date`**  
+  - Calendar dimension  
+  - One row per calendar day  
+  - Enables time-based and seasonality analysis
 
 ---
 
