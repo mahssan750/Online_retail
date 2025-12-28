@@ -1,7 +1,47 @@
 /*=====================================================
-        gold.fact_sales_daily
+GOLD LAYER — DAILY SALES FACT TABLE
+File: gold_fact_sales_daily.sql
+Description:
+This script builds a daily aggregated sales
+fact table (gold.fact_sales_daily) using the
+conformed Silver star schema.
+Grain:
+
+One row per date
+Purpose:
+Aggregate transactional sales data by day
+Enable time-based performance analysis for
+revenue, order volume, customer activity,
+geographic reach, and product metrics
+Support BI dashboards, trend analysis, and
+daily comparisons
+Key Metrics:
+Total orders and total revenue
+Average order value (AOV)
+Unique customers
+Total countries
+Total quantity sold
+Unique products
+Invoice row count for data quality checks
+Design Notes:
+Uses surrogate keys from silver.fact_sales
+(Date_SK) to ensure referential integrity
+Date attributes are sourced from
+silver.dim_date
+All measures are derived from validated,
+line-level sales facts
+Includes optional denormalized full_date for convenience
+Filters (e.g., returns or operational codes) should be handled in silver layer
+Source Tables:
+silver.fact_sales
+silver.dim_date
+Target Table:
+gold.fact_sales_daily
+Layer:
+GOLD (Analytics-ready, aggregated data)
 =====================================================*/
-/* ======= gold.fact_sales_daily (star-schema aligned) ======= */
+
+/*======= gold.fact_sales_daily (star-schema aligned) =======*/
 IF OBJECT_ID('gold.fact_sales_daily', 'U') IS NOT NULL
     DROP TABLE gold.fact_sales_daily;
 GO
