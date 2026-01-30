@@ -68,7 +68,7 @@ The primary objective of this project is to:
 ---
 
 ## 4. Data Layers and Tables
-![Data Flow](images2/data_flow.jpg)
+![Data Flow](images2/data_flow.png)
 ### Bronze Layer (Raw Data)
 **Description:** Source-aligned storage of transactional records.
 
