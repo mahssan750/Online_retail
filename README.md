@@ -5,7 +5,7 @@ This project implements an **end-to-end analytical data pipeline** using the **M
 The pipeline is built **entirely in T-SQL**, designed to transform raw transaction records into **business-ready analytical models** optimized for reporting, analytics, and decision-making.
 
 ---
-![Data Architecture] (images/High_Level_Archeticture_v2.jpg)
+![Data Architecture](images/High_Level_Archeticture_v2.jpg)
 ## 1. Project Context
 
 The dataset contains **over half a million transactions** from a UK-based non-store online retailer operating between **December 2010 and December 2011**.
