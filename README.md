@@ -149,7 +149,7 @@ How much revenue is generated, when, and from where?
 
 ---
 
-#### 4.2 Customer Analytics
+#### 4.2 Customer Analytics (Retail vs Whole sale)
 **Business Question:**  
 Who are the most valuable customers and how do they behave?
 
@@ -157,9 +157,9 @@ Who are the most valuable customers and how do they behave?
 - `gold.fact_customer_value`
 
 **Key Metrics:**
-- Total Spend per Customer
-- Number of Invoices
-- Average Basket Size
+- Total Spend per Customer Type (Retail vs Whole sale)
+- Number of Invoices per Customer Type (Retail vs Whole sale)
+- Average Basket Size (Retail vs Whole sale)
 - First and Last Purchase Dates
 
 > Transactions with `NULL CustomerID` contribute to revenue but are excluded from customer-level analytics.
