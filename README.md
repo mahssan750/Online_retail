@@ -145,7 +145,7 @@ How much revenue is generated, when, and from where?
 - Average Order Value (AOV)
 - Revenue by Country
 - Revenue by Time Period
-  ![Sales & Revenue Analysis](images2/Sales and Revenue Analysis.png)
+- ![Sales and Revenue Analysis](images2/Sales_and_Revenue_Analysis.png)
 
 ---
 
