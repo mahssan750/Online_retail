@@ -1,13 +1,13 @@
 /* ================================================
     File: loading_bronze.sql
-    Description: This script creates the bronze.fact_transactions_raw table and loads data from a CSV file into it.
+    Description: This script creates the bronze.flat_transactions_raw table and loads data from a CSV file into it.
 
 ==================================================*/
-IF OBJECT_ID('bronze.fact_transactions_raw', 'U') IS NOT NULL
-    DROP TABLE bronze.fact_transactions_raw;
+IF OBJECT_ID('bronze.flat_transactions_raw', 'U') IS NOT NULL
+    DROP TABLE bronze.flat_transactions_raw;
 GO
 
-CREATE TABLE bronze.fact_transactions_raw (
+CREATE TABLE bronze.flat_transactions_raw (
     InvoiceNo       NVARCHAR(50), -- I changed INT to NVARCHAR(50) to accommodate alphanumeric invoice numbers
     StockCode       NVARCHAR(50),
     Description     NVARCHAR(255),
@@ -20,7 +20,7 @@ CREATE TABLE bronze.fact_transactions_raw (
 GO
 
 --------------------------------------------------------	
--- Load data into bronze.fact_transactions_raw from CSV file
+-- Load data into bronze.flat_transactions_raw from CSV file
 --------------------------------------------------------
 
 CREATE OR ALTER PROCEDURE LoadBronzeMain
@@ -36,9 +36,9 @@ BEGIN
 		PRINT '------------------------------------------------';
 
 		SET @start_time = GETDATE();
-		PRINT '>> Truncating Table: bronze.fact_transactions_raw';
+		PRINT '>> Truncating Table: bronze.flat_transactions_raw';
 		TRUNCATE TABLE bronze.fact_transactions_raw;
-		PRINT '>> Inserting Data Into: bronze.fact_transactions_raw';
+		PRINT '>> Inserting Data Into: bronze.flat_transactions_raw';
 		BULK INSERT bronze.fact_transactions_raw
 		FROM 'C:\Bulk Data\online_retail.csv'
 		WITH (
@@ -53,7 +53,7 @@ BEGIN
 		SET @end_time = GETDATE();
 		PRINT '>> Load Duration: ' + CAST(DATEDIFF(second, @start_time, @end_time) AS NVARCHAR) + ' seconds';
 		PRINT '>> -------------';
-	PRINT '>> Completed Loading bronze.fact_transactions_raw';
+	PRINT '>> Completed Loading bronze.flat_transactions_raw';
 	PRINT '------------------------------------------------';
 END;
 
