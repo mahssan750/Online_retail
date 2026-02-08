@@ -69,7 +69,7 @@ WITH base_query AS (
         c.CustomerID,
         fs.InvoiceNo,
         d.FullDate      AS InvoiceDate,
-        fs.Quantity,
+        fs.Quantity,    --from silver.fact_sales -grain is at ONE ROW PER INVOICE LINE (Invoice × Product × Date)
         fs.LineRevenue,
         fs.Product_SK
     FROM silver.fact_sales fs
@@ -85,7 +85,7 @@ SELECT
 
     -- Customer classification
     CASE 
-        WHEN SUM(Quantity) >= 3000 THEN 'Wholesale'
+        WHEN SUM(Quantity) / COUNT(DISTINCT InvoiceNo) >= 50 THEN 'Wholesale'
         ELSE 'Retail'
     END AS Customer_Type,
 
@@ -120,6 +120,6 @@ FROM base_query
 GROUP BY CustomerID;
 
 ----
-SELECT TOP 20 *
-FROM gold.fact_customer
-ORDER BY Total_Spend DESC;
+--SELECT TOP 20 *
+--FROM gold.fact_customer
+--ORDER BY Total_Spend DESC;
