@@ -1,198 +1,196 @@
+# End-to-End Retail Data Warehouse  
+## Medallion Architecture (Bronze → Silver → Gold)
 
-End-to-End Retail Data Warehouse
-Medallion Architecture (Bronze → Silver → Gold)
+This project implements a layered analytical data warehouse in **SQL Server** using the **Medallion Architecture** pattern.  
+Raw retail transactions are transformed into a clean, scalable **star schema dimensional model** optimized for business intelligence and reporting.
 
-This project implements a layered analytical data warehouse in SQL Server using the Medallion Architecture pattern.
-Raw retail transactions are transformed into a clean, scalable star schema dimensional model optimized for business intelligence and reporting.
+---
 
-1. Project Overview
+# 1. Project Overview
 
-The dataset contains 500,000+ retail transactions from a UK-based online retailer (2010–2011).
+The dataset contains **500,000+ retail transactions** from a UK-based online retailer (2010–2011).
 
 The source data reflects real-world operational complexity:
 
-Duplicate rows
+- Duplicate rows  
+- Cancelled invoices  
+- Negative or zero quantities  
+- Missing customer identifiers  
+- Multi-country sales  
+- Wholesale purchasing patterns  
 
-Cancelled invoices
+## Objective
 
-Negative or zero quantities
+Transform raw operational data into a structured, analytics-ready dimensional model with clearly defined data layers and explicit table grain.
 
-Missing customer identifiers
+---
 
-Multi-country sales
-
-Wholesale purchasing patterns
-
-Objective
-
-Transform raw operational data into a structured, analytics-ready dimensional model with clearly defined data layers and grain.
-
-2. Repository Structure
+# 2. Repository Structure
 
 The project is organized into four core SQL scripts:
 
+```
 ddl_database_and_schemas.sql
 loading_bronze.sql
 silver_build.sql
 gold_star_schema_build.sql
+```
 
-2.1 ddl_database_and_schemas.sql
+---
 
-Creates:
+## 2.1 `ddl_database_and_schemas.sql`
 
-Database
+**Creates:**
 
-Schemas: bronze, silver, gold
+- Database  
+- Schemas: `bronze`, `silver`, `gold`  
 
-Purpose:
+**Purpose:**  
 Establishes the structural foundation of the warehouse.
 
-2.2 loading_bronze.sql
+---
 
-Layer: 🥉 Bronze
+## 2.2 `loading_bronze.sql`
 
-Creates and loads:
+**Layer:** 🥉 Bronze  
 
+**Creates and Loads:**
+
+```
 bronze.flat_transactions_raw
+```
 
-Characteristics
+### Characteristics
 
-Raw ingestion table
+- Raw ingestion table  
+- No transformation logic  
+- Preserves original structure and values  
+- Serves as the historical source of truth  
 
-No transformation logic
-
-Preserves original structure and values
-
-Serves as historical source of truth
-
-Purpose:
+**Purpose:**  
 Data capture and traceability.
 
-2.3 silver_build.sql
+---
 
-Layer: 🥈 Silver
+## 2.3 `silver_build.sql`
 
-Creates:
+**Layer:** 🥈 Silver  
 
+**Creates:**
+
+```
 silver.flat_transactions
+```
 
-Grain
+### Grain
 
-One row per invoice line (transaction grain).
+One row per invoice line (transaction-level grain).
 
-Transformations Applied
+### Transformations Applied
 
-Removes exact duplicates using ROW_NUMBER()
+- Removes exact duplicates using `ROW_NUMBER()`  
+- Standardizes data types  
+- Preserves `NULL` `CustomerID` values  
+- Maintains transactional structure  
 
-Standardizes data types
-
-Preserves NULL CustomerID values
-
-Maintains transactional structure
-
-Design Principle
+### Design Principles
 
 The Silver layer:
 
-Cleans and validates data
+- Cleans and validates data  
+- Does **not** implement dimensional modeling  
+- Does **not** apply business-level aggregation  
 
-Does not implement dimensional modeling
-
-Does not apply business-level aggregation
-
-Purpose:
+**Purpose:**  
 Provide a clean, reliable transaction-level dataset that feeds the Gold layer.
 
-2.4 gold_star_schema_build.sql
+---
 
-Layer: 🥇 Gold
+## 2.4 `gold_star_schema_build.sql`
 
-Implements a Star Schema dimensional model for analytics.
+**Layer:** 🥇 Gold  
 
-Dimensions
-gold.dim_country
+Implements a **Star Schema dimensional model** designed for analytics.
 
-One row per country
+---
 
-gold.dim_customer
+### Dimensions
 
-One row per customer (including generated guest customers)
+#### `gold.dim_country`
+- One row per country  
 
-Attributes:
+---
 
-FirstPurchaseDate
+#### `gold.dim_customer`
+- One row per customer (including generated guest customers)  
+- Attributes:
+  - `FirstPurchaseDate`
+  - `LastPurchaseDate`
+  - `Customer_Type` (Retail vs Wholesale)
 
-LastPurchaseDate
+---
 
-Customer_Type (Retail vs Wholesale)
+#### `gold.dim_date`
+- One row per calendar day  
+- Attributes:
+  - Year
+  - Month
+  - Quarter
+  - WeekOfYear
+  - DayName
+  - Weekend flag
 
-gold.dim_date
+---
 
-One row per calendar day
+#### `gold.dim_product`
+- One row per product (`StockCode` + `Description`)  
+- Includes first-seen date  
 
-Attributes:
+---
 
-Year, Month, Quarter
+### Fact Table
 
-WeekOfYear
+#### `gold.fact_sales`
 
-DayName
-
-Weekend flag
-
-gold.dim_product
-
-One row per product (StockCode + Description)
-
-Includes first-seen date
-
-Fact Table
-gold.fact_sales
-
-Grain:
-One row per invoice line
+**Grain:**  
+One row per invoice line  
 (Invoice × Product × Date)
 
-Measures
+### Measures
 
-Quantity
+- `Quantity`  
+- `UnitPrice`  
+- `LineRevenue`  
 
-UnitPrice
+### Characteristics
 
-LineRevenue
+- Uses surrogate keys  
+- Enforces revenue validity (`Quantity > 0` AND `UnitPrice > 0`)  
+- Excludes cancelled invoices (`InvoiceNo LIKE 'C%'`)  
+- Optimized with analytical indexes  
 
-Characteristics
+**Purpose:**  
+Central fact table supporting BI reporting and analytical workloads.
 
-Uses surrogate keys
+---
 
-Enforces revenue validity (Quantity > 0 and UnitPrice > 0)
-
-Excludes cancelled invoices (InvoiceNo LIKE 'C%')
-
-Optimized with analytical indexes
-
-Purpose:
-Central fact table supporting BI reporting and aggregation.
-
-3. Architectural Design Principles
+# 3. Architectural Design Principles
 
 This warehouse follows dimensional modeling best practices:
 
-Clear separation of Bronze / Silver / Gold responsibilities
+- Clear separation of Bronze / Silver / Gold responsibilities  
+- Explicit fact table grain definition  
+- Star schema design  
+- Surrogate keys in the Gold layer  
+- No aggregation logic in Silver  
+- Business rules enforced in Gold  
+- Indexed fact table for analytical performance  
 
-Explicit fact table grain definition
+---
 
-Star schema design
+# 4. Data Flow
 
-Surrogate keys in the Gold layer
-
-No aggregation logic in Silver
-
-Business rules enforced in Gold
-
-Indexed fact table for analytical performance
-
-4. Data Flow
+```
 Raw Source / CSV
         ↓
 Bronze (Raw Storage)
@@ -200,49 +198,44 @@ Bronze (Raw Storage)
 Silver (Clean Transactional Layer)
         ↓
 Gold (Star Schema – Analytics Ready)
+```
 
-
-Silver prepares the data.
+Silver prepares the data.  
 Gold models it for analytics.
 
-5. Intended Use
+---
+
+# 5. Intended Use
 
 The Gold layer is designed for:
 
-Power BI dashboards
+- Power BI dashboards  
+- Revenue analysis  
+- Customer segmentation  
+- Product performance evaluation  
+- Time-based and seasonal analysis  
 
-Revenue analysis
+All analytical queries should target the **Gold layer**.
 
-Customer segmentation
+---
 
-Product performance evaluation
+# 6. Technology Stack
 
-Time-based and seasonal analysis
+- SQL Server  
+- T-SQL  
+- Medallion Architecture  
+- Dimensional Modeling (Star Schema)  
 
-All analytical queries should target the Gold layer.
+---
 
-6. Technology Stack
-
-SQL Server
-
-T-SQL
-
-Medallion Architecture
-
-Dimensional Modeling (Star Schema)
-
-7. Key Outcome
+# 7. Key Outcome
 
 This repository demonstrates how to:
 
-Transform raw retail data into a structured warehouse
-
-Implement Medallion architecture in pure SQL
-
-Design a proper star schema
-
-Apply data quality rules systematically
-
-Build an analytics-ready dimensional model
+- Transform raw retail data into a structured warehouse  
+- Implement Medallion architecture using pure SQL  
+- Design a robust star schema  
+- Apply data quality rules systematically  
+- Build an analytics-ready dimensional model  
 
 The result is a clean, scalable foundation for business intelligence and reporting.
