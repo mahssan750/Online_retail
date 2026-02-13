@@ -1,232 +1,226 @@
-# End-to-End Analytical Data Pipeline  
-## Bronze–Silver–Gold (Medallion) Architecture for Retail Transactional Data
+1. Project Overview
 
-This project implements an **end-to-end analytical data pipeline** using the **Medallion Architecture (Bronze → Silver → Gold)** to process large-scale retail transactional data.  
-The pipeline is built **entirely in T-SQL**, designed to transform raw transaction records into **business-ready analytical models** optimized for reporting, analytics, and decision-making.
+The dataset contains over 500,000 retail transactions from a UK-based online retailer (2010–2011).
 
----
-![Data Architecture](images2/high_level_archeticture_v3.jpg.jpg)
-## 1. Project Context
+The data includes real-world complexities:
 
-The dataset contains **over half a million transactions** from a UK-based non-store online retailer operating between **December 2010 and December 2011**.
+Duplicate rows
 
-The data reflects real-world retail complexity, including:
-- High transaction volume
-- Mixed product types (physical goods, postage, fees, manual adjustments)
-- Invoice cancellations and corrections
-- Wholesale purchasing behavior (large quantities, high invoice values)
-- Missing customer identifiers
-- Multi-country sales activity
+Cancelled invoices
 
-The project demonstrates how to **systematically clean, standardize, and aggregate transactional data** using a layered architecture suitable for enterprise analytics.
+Negative or zero quantities
 
----
+Missing customer identifiers
 
-## 2. Medallion Architecture Overview
+Multi-country sales
 
-The Medallion Architecture organizes data into **three logical layers**, each with a clear responsibility:
+Wholesale purchasing patterns
 
-### 🥉 Bronze Layer — Raw Ingestion
-- Stores data **as received** from the source
-- Minimal or no transformation
-- Preserves original structure and values
-- Acts as a historical record of raw data
+The objective is to transform raw operational data into a clean, scalable dimensional model suitable for analytics and reporting.
 
-**Purpose:** Data capture and traceability
+2. Repository Structure
 
----
+The project is organized into four main SQL files:
 
-### 🥈 Silver Layer — Cleaned & Standardized Data
-- Applies data cleaning and validation rules
-- Standardizes data types and formats
-- Removes duplicates
-- Handles nulls and invalid records
-- Applies business rules (e.g., cancellations, invalid prices)
+ddl_database_and_schemas.sql
+loading_bronze.sql
+silver_build.sql
+gold_star_schema_build.sql
 
-**Purpose:** Provide a reliable, analysis-ready transactional dataset
+2.1 ddl_database_and_schemas.sql
 
----
+Creates:
 
-### 🥇 Gold Layer — Business-Ready Analytics
-- Fully aggregated and curated tables
-- Optimized for BI tools and reporting
-- No raw fields or row-level noise
-- Each table answers a specific business question
+Database
 
-**Purpose:** Enable fast, trusted analytics and decision-making
+Schemas (bronze, silver, gold)
 
-> **Gold tables answer questions — they do not store events.**
+Purpose:
+Defines the structural foundation of the warehouse.
 
----
+2.2 loading_bronze.sql
 
-## 3. Project Objective
+Layer: 🥉 Bronze
 
-The primary objective of this project is to:
+Creates and loads:
 
-> **Design and implement a scalable Gold Layer in T-SQL that transforms cleaned transactional data into business-ready analytical tables, enabling sales analysis, customer analytics, product performance evaluation, and time-based insights.**
+bronze.flat_transactions_raw
 
----
+Characteristics:
 
-## 4. Data Layers and Tables
-![Data Flow](images2/data_flow.png)
-### Bronze Layer (Raw Data)
-**Description:** Source-aligned storage of transactional records.
+Raw ingestion table
 
-**Typical Tables:**
-- `bronze.fact_transactions_raw`
+No transformation logic
 
----
+Preserves original structure
 
-### Silver Layer (Cleaned & Conformed Data)
-**Description:** Transaction-level data with enforced data quality and business rules.
+Acts as historical source of truth
 
-#### Silver Layer Data Model
-The Silver layer is implemented using a **Star Schema**, consisting of one central fact table and multiple conformed dimensions.
+Purpose:
+Data capture and traceability.
 
-**Key Transformations:**
-- Remove duplicate transaction rows
-- Exclude cancelled invoices (`InvoiceNo LIKE 'C%'`)
-- Enforce valid revenue logic (`Quantity > 0` and `UnitPrice > 0`)
-- Standardize date and time formats
-- Preserve `NULL` `CustomerID` values to support guest checkouts
-- Resolve natural keys into surrogate keys during fact loading
+2.3 silver_build.sql
 
+Layer: 🥈 Silver
 
-**Fact Tables:**
+Creates:
 
-- **`silver.fact_main`**  
-  - Deduplicated transactional source table  
-  - One row per raw invoice line  
-  - Acts as the canonical cleaned dataset in Silver
+silver.flat_transactions
 
-- **`silver.fact_sales`**  
-  - Analytical fact table  
-  - Grain: **one row per invoice line (Product × Invoice × Date)**  
-  - Stores measurable metrics such as quantity, unit price, and line-level revenue  
-  - Uses surrogate keys to reference all dimensions
+Grain:
 
----
-**Dimension Tables:**
+One row per invoice line (transaction grain)
 
-- **`silver.dim_product`**  
-  - Product master data  
-  - Attributes include stock code, product name, and first-seen date
+Transformations applied:
 
-- **`silver.dim_customer`**  
-  - Customer master data  
-  - Tracks customer purchase lifecycle (first and last purchase dates)  
-  - Supports nullable customers (guest transactions)
+Removes exact duplicate rows using ROW_NUMBER()
 
-- **`silver.dim_country`**  
-  - Conformed geographic dimension  
-  - One row per country with enforced uniqueness
+Standardizes data types
 
-- **`silver.dim_date`**  
-  - Calendar dimension  
-  - One row per calendar day  
-  - Enables time-based and seasonality analysis
+Preserves null CustomerID values
 
----
+Maintains transactional structure
 
-### Gold Layer (Analytical Models)
+Purpose:
+Provide a clean, reliable transaction-level dataset that feeds the Gold layer.
 
-#### 4.1 Sales & Revenue Analysis
-**Business Question:**  
-How much revenue is generated, when, and from where?
+Silver does not apply heavy business aggregation or dimensional modeling.
 
-**Tables:**
-- `gold.fact_sales_daily`
-- `gold.fact_sales_monthly`
-- `gold.fact_sales_country`
+2.4 gold_star_schema_build.sql
 
-**Key Metrics:**
-- Total Revenue
-- Number of Orders
-- Average Order Value (AOV)
-- Revenue by Country
-- Revenue by Time Period
-- ![Sales and Revenue Analysis](images2/Sales_and_Revenue_Analysis.png)
+Layer: 🥇 Gold
 
----
+Implements a Star Schema dimensional model.
 
-#### 4.2 Customer Analytics (Retail vs Whole sale)
-**Business Question:**  
-Who are the most valuable customers and how do they behave?
+Dimensions
 
-**Tables:**
-- `gold.fact_customer_value`
+gold.dim_country
+One row per country.
 
-**Key Metrics:**
-- Total Spend per Customer Type (Retail vs Whole sale)
-- Number of Invoices per Customer Type (Retail vs Whole sale)
-- Average Basket Size (Retail vs Whole sale)
-- First and Last Purchase Dates
+gold.dim_customer
+One row per customer (including generated guest customers).
+Includes:
 
-> Transactions with `NULL CustomerID` contribute to revenue but are excluded from customer-level analytics.
+FirstPurchaseDate
 
----
+LastPurchaseDate
 
-#### 4.3 Product Performance
-**Business Question:**  
-Which products drive revenue and sales volume?
+Customer_Type (Retail vs Wholesale)
 
-**Tables:**
-- `gold.fact_product_sales`
+gold.dim_date
+One row per calendar day.
+Includes:
 
-**Key Metrics:**
-- Total Quantity Sold
-- Total Revenue per Product
-- Average Unit Price
-- Revenue Contribution Percentage
+Year, Month, Quarter
 
----
+WeekOfYear
 
-#### 4.4 Time-Based & Seasonality Analysis
-**Business Question:**  
-When do customers buy, and how does seasonality affect sales?
+DayName
 
-**Tables:**
-- `gold.fact_time_analysis`
+Weekend flag
 
-**Key Metrics:**
-- Revenue by Month
-- Revenue by Day of Week
-- Revenue by Hour of Day
+gold.dim_product
+One row per product (StockCode + Description).
+Includes first-seen date.
 
----
+Fact Table
 
-## 5. Data Quality & Business Rules
+gold.fact_sales
 
-To ensure trust and analytical accuracy, the Gold Layer enforces:
+Grain:
+One row per invoice line
+(Invoice × Product × Date)
 
-- Exclusion of cancelled invoices
-- Exclusion of zero or negative revenue rows
-- Separation of operational charges (postage, fees, manual adjustments)
-- Clear table grain (one business meaning per table)
+Measures:
 
-**Outcome:**  
-Business users can query Gold tables **without needing to understand raw data quirks or operational anomalies**.
+Quantity
 
----
+UnitPrice
 
-## 6. Technology Stack
+LineRevenue
 
-- **SQL Server**
-- **T-SQL**
-- Medallion Architecture (Bronze–Silver–Gold)
+Characteristics:
 
----
+Uses surrogate keys
 
-## 7. Intended Use
+Enforces revenue logic (Quantity > 0, UnitPrice > 0)
 
-This project is suitable for:
-- BI reporting (Power BI, Tableau)
-- Sales and customer analytics
-- Portfolio demonstration of SQL-based data engineering skills
-- Retail analytics case studies
+Excludes cancelled invoices (InvoiceNo LIKE 'C%')
 
----
+Optimized with analytical indexes
 
-## 8. Key Takeaway
+Purpose:
+Central fact table for BI reporting and aggregation.
 
-This repository demonstrates how **raw transactional data** can be transformed into **trusted, high-performance analytical models** using a disciplined, scalable data architecture — implemented entirely in SQL.
+3. Architectural Design Principles
+
+This project follows key warehouse best practices:
+
+Clear separation of Bronze / Silver / Gold responsibilities
+
+Star schema dimensional modeling
+
+Surrogate keys in Gold
+
+Fact table with explicit grain definition
+
+No aggregation logic in Silver
+
+Business logic applied in Gold
+
+Indexed fact table for analytical performance
+
+4. Data Flow
+Raw CSV / Source
+        ↓
+Bronze (Raw Storage)
+        ↓
+Silver (Clean Transactional Layer)
+        ↓
+Gold (Star Schema – Analytics Ready)
+
+
+Silver prepares the data.
+Gold models it for analytics.
+
+5. Intended Use
+
+The Gold layer is designed for:
+
+Power BI dashboards
+
+Revenue analysis
+
+Customer segmentation
+
+Product performance evaluation
+
+Time-based and seasonal analysis
+
+All analytical queries should be executed against the Gold layer.
+
+6. Technology Stack
+
+SQL Server
+
+T-SQL
+
+Medallion Architecture
+
+Dimensional Modeling (Star Schema)
+
+7. Key Outcome
+
+This repository demonstrates how to:
+
+Transform raw retail data into a structured warehouse
+
+Implement Medallion architecture in pure SQL
+
+Design a proper star schema
+
+Apply data quality rules systematically
+
+Build an analytics-ready dimensional model
+
+The result is a clean, scalable foundation for business intelligence and reporting.
