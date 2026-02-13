@@ -1,8 +1,15 @@
+
+End-to-End Retail Data Warehouse
+Medallion Architecture (Bronze → Silver → Gold)
+
+This project implements a layered analytical data warehouse in SQL Server using the Medallion Architecture pattern.
+Raw retail transactions are transformed into a clean, scalable star schema dimensional model optimized for business intelligence and reporting.
+
 1. Project Overview
 
-The dataset contains over 500,000 retail transactions from a UK-based online retailer (2010–2011).
+The dataset contains 500,000+ retail transactions from a UK-based online retailer (2010–2011).
 
-The data includes real-world complexities:
+The source data reflects real-world operational complexity:
 
 Duplicate rows
 
@@ -16,11 +23,13 @@ Multi-country sales
 
 Wholesale purchasing patterns
 
-The objective is to transform raw operational data into a clean, scalable dimensional model suitable for analytics and reporting.
+Objective
+
+Transform raw operational data into a structured, analytics-ready dimensional model with clearly defined data layers and grain.
 
 2. Repository Structure
 
-The project is organized into four main SQL files:
+The project is organized into four core SQL scripts:
 
 ddl_database_and_schemas.sql
 loading_bronze.sql
@@ -33,10 +42,10 @@ Creates:
 
 Database
 
-Schemas (bronze, silver, gold)
+Schemas: bronze, silver, gold
 
 Purpose:
-Defines the structural foundation of the warehouse.
+Establishes the structural foundation of the warehouse.
 
 2.2 loading_bronze.sql
 
@@ -46,15 +55,15 @@ Creates and loads:
 
 bronze.flat_transactions_raw
 
-Characteristics:
+Characteristics
 
 Raw ingestion table
 
 No transformation logic
 
-Preserves original structure
+Preserves original structure and values
 
-Acts as historical source of truth
+Serves as historical source of truth
 
 Purpose:
 Data capture and traceability.
@@ -67,39 +76,49 @@ Creates:
 
 silver.flat_transactions
 
-Grain:
+Grain
 
-One row per invoice line (transaction grain)
+One row per invoice line (transaction grain).
 
-Transformations applied:
+Transformations Applied
 
-Removes exact duplicate rows using ROW_NUMBER()
+Removes exact duplicates using ROW_NUMBER()
 
 Standardizes data types
 
-Preserves null CustomerID values
+Preserves NULL CustomerID values
 
 Maintains transactional structure
 
+Design Principle
+
+The Silver layer:
+
+Cleans and validates data
+
+Does not implement dimensional modeling
+
+Does not apply business-level aggregation
+
 Purpose:
 Provide a clean, reliable transaction-level dataset that feeds the Gold layer.
-
-Silver does not apply heavy business aggregation or dimensional modeling.
 
 2.4 gold_star_schema_build.sql
 
 Layer: 🥇 Gold
 
-Implements a Star Schema dimensional model.
+Implements a Star Schema dimensional model for analytics.
 
 Dimensions
-
 gold.dim_country
-One row per country.
+
+One row per country
 
 gold.dim_customer
-One row per customer (including generated guest customers).
-Includes:
+
+One row per customer (including generated guest customers)
+
+Attributes:
 
 FirstPurchaseDate
 
@@ -108,8 +127,10 @@ LastPurchaseDate
 Customer_Type (Retail vs Wholesale)
 
 gold.dim_date
-One row per calendar day.
-Includes:
+
+One row per calendar day
+
+Attributes:
 
 Year, Month, Quarter
 
@@ -120,18 +141,19 @@ DayName
 Weekend flag
 
 gold.dim_product
-One row per product (StockCode + Description).
-Includes first-seen date.
+
+One row per product (StockCode + Description)
+
+Includes first-seen date
 
 Fact Table
-
 gold.fact_sales
 
 Grain:
 One row per invoice line
 (Invoice × Product × Date)
 
-Measures:
+Measures
 
 Quantity
 
@@ -139,39 +161,39 @@ UnitPrice
 
 LineRevenue
 
-Characteristics:
+Characteristics
 
 Uses surrogate keys
 
-Enforces revenue logic (Quantity > 0, UnitPrice > 0)
+Enforces revenue validity (Quantity > 0 and UnitPrice > 0)
 
 Excludes cancelled invoices (InvoiceNo LIKE 'C%')
 
 Optimized with analytical indexes
 
 Purpose:
-Central fact table for BI reporting and aggregation.
+Central fact table supporting BI reporting and aggregation.
 
 3. Architectural Design Principles
 
-This project follows key warehouse best practices:
+This warehouse follows dimensional modeling best practices:
 
 Clear separation of Bronze / Silver / Gold responsibilities
 
-Star schema dimensional modeling
+Explicit fact table grain definition
 
-Surrogate keys in Gold
+Star schema design
 
-Fact table with explicit grain definition
+Surrogate keys in the Gold layer
 
 No aggregation logic in Silver
 
-Business logic applied in Gold
+Business rules enforced in Gold
 
 Indexed fact table for analytical performance
 
 4. Data Flow
-Raw CSV / Source
+Raw Source / CSV
         ↓
 Bronze (Raw Storage)
         ↓
@@ -197,7 +219,7 @@ Product performance evaluation
 
 Time-based and seasonal analysis
 
-All analytical queries should be executed against the Gold layer.
+All analytical queries should target the Gold layer.
 
 6. Technology Stack
 
