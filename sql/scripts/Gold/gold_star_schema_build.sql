@@ -223,16 +223,17 @@ PRINT 'STEP 5: Creating gold.fact_sales';
 PRINT '------------------------------------------------';
 
 CREATE TABLE gold.fact_sales(
-    Sales_SK     BIGINT IDENTITY(1,1) PRIMARY KEY,
-    InvoiceNo    NVARCHAR(50),   -- Degenerate dimension
-    Product_SK   INT NOT NULL,
-    Customer_SK  INT NULL,
-    Country_SK   INT NOT NULL,
-    Date_SK      INT NOT NULL,
-    Quantity     INT,
-    UnitPrice    DECIMAL(18,2),
-    LineRevenue  DECIMAL(18,2),
-    Created_At   DATETIME2 DEFAULT SYSDATETIME()
+    Sales_SK         BIGINT IDENTITY(1,1) PRIMARY KEY,
+    InvoiceNo        NVARCHAR(50),   -- Degenerate dimension
+    Product_SK       INT NOT NULL,
+    Customer_SK      INT NULL,
+    Country_SK       INT NOT NULL,
+    Date_SK          INT NOT NULL,
+    Order_Status     NVARCHAR(20),   -- New Column for "Transaction" or "Return"
+    Quantity         INT,
+    UnitPrice        DECIMAL(18,2),
+    LineRevenue      DECIMAL(18,2),
+    Created_At       DATETIME2 DEFAULT SYSDATETIME()
 );
 
 INSERT INTO gold.fact_sales (
@@ -241,6 +242,7 @@ INSERT INTO gold.fact_sales (
     Customer_SK,
     Country_SK,
     Date_SK,
+    Order_Status,    -- Mapping the new column
     Quantity,
     UnitPrice,
     LineRevenue
@@ -251,9 +253,14 @@ SELECT
     c.Customer_SK,
     cnty.Country_SK,
     d.Date_SK,
+    -- Logic to flag returns based on InvoiceNo
+    CASE 
+        WHEN f.InvoiceNo LIKE 'C%' OR f.Quantity < 0 THEN 'Return'
+        ELSE 'Transaction' 
+    END AS Order_Status,
     f.Quantity,
     f.UnitPrice,
-    f.Quantity * f.UnitPrice
+    f.Quantity * f.UnitPrice -- Automatically becomes negative for returns
 FROM silver.flat_transactions f
 
 INNER JOIN gold.dim_product  p 
@@ -275,11 +282,11 @@ INNER JOIN gold.dim_date d
     ON TRY_CONVERT(DATE, f.InvoiceDate) = d.FullDate
 
 WHERE
-    f.Quantity > 0
-    AND f.UnitPrice > 0
-    AND f.InvoiceNo NOT LIKE 'C%';
+    f.UnitPrice > 0 -- Only remove invalid prices, keep negative quantities!
+    -- REMOVED: f.Quantity > 0 
+    -- REMOVED: f.InvoiceNo NOT LIKE 'C%'
 
-PRINT '✓ gold.fact_sales populated';
+PRINT '✓ gold.fact_sales populated with Returns included';
 --================================================================
 PRINT '------------------------------------------------';
 PRINT 'STEP 6: Creating indexes';
