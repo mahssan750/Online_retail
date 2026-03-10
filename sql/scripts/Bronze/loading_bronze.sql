@@ -37,9 +37,9 @@ BEGIN
 
 		SET @start_time = GETDATE();
 		PRINT '>> Truncating Table: bronze.flat_transactions_raw';
-		TRUNCATE TABLE bronze.fact_transactions_raw;
+		TRUNCATE TABLE bronze.flat_transactions_raw;
 		PRINT '>> Inserting Data Into: bronze.flat_transactions_raw';
-		BULK INSERT bronze.fact_transactions_raw
+		BULK INSERT bronze.flat_transactions_raw
 		FROM 'C:\Bulk Data\online_retail.csv'
 		WITH (
             FORMAT = 'CSV',
