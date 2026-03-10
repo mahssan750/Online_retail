@@ -3,7 +3,7 @@
 
 This project implements a layered analytical data warehouse in **SQL Server** using the **Medallion Architecture** pattern.  
 Raw retail transactions are transformed into a clean, scalable **star schema dimensional model** optimized for business intelligence and reporting.
-
+![](images2/high_level_archeticture_v3.jpg.jpg)
 ---
 
 # 1. Project Overview
