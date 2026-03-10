@@ -138,7 +138,7 @@ Provide a clean, reliable transaction-level dataset that feeds the Gold layer.
 
 Implements a **Star Schema dimensional model** designed for analytics.
 ---
-!(Gold Star Schema)[images2/GOLD_STAR_SCHEMA.png]
+![Gold Star Schema](images2/GOLD_STAR_SCHEMA.png)
 ---
 
 ### Dimensions
