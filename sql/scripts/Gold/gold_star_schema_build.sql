@@ -132,24 +132,6 @@ GROUP BY
 -------------------------------------------------------------------------------   
 -------------------------------------------------------------------------------   
 
-/* Recalculate Customer Types
-   Rule: If a customer has spent more than £5,000 Lifetime, mark as Wholesale.
-   Otherwise, Retail.
-*/
-UPDATE gold.dim_customer
-SET Customer_Type = 
-    CASE 
-        -- Check the fact table for total revenue per customer
-        WHEN (
-            SELECT SUM(LineRevenue) 
-            FROM gold.fact_sales f 
-            WHERE f.Customer_SK = gold.dim_customer.Customer_SK
-        ) > 5000 THEN 'Wholesale'
-        ELSE 'Retail'
-    END;
--------------------------------------------------------------------------------  
--------------------------------------------------------------------------------   
-
 PRINT '✓ gold.dim_customer populated';
 --================================================================
 IF OBJECT_ID('gold.dim_date', 'U') IS NOT NULL
@@ -326,6 +308,24 @@ WHERE s.InvoiceDate IS NOT NULL;
 
 PRINT '✓ gold.fact_sales populated with Returns included';
 --================================================================
+-------------------------------------------------------------------------------   
+/* Recalculate Customer Types
+   Rule: If a customer has spent more than £5,000 Lifetime, mark as Wholesale.
+   Otherwise, Retail.
+*/
+UPDATE gold.dim_customer
+SET Customer_Type = 
+    CASE 
+        -- Check the fact table for total revenue per customer
+        WHEN (
+            SELECT SUM(LineRevenue) 
+            FROM gold.fact_sales f 
+            WHERE f.Customer_SK = gold.dim_customer.Customer_SK
+        ) > 5000 THEN 'Wholesale'
+        ELSE 'Retail'
+    END;
+-------------------------------------------------------------------------------  
+
 PRINT '------------------------------------------------';
 PRINT 'STEP 6: Creating indexes';
 PRINT '------------------------------------------------';
