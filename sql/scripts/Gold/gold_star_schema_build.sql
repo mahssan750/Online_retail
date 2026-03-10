@@ -121,6 +121,7 @@ SELECT
         ELSE 'Retail'
     END
 
+
 FROM silver.flat_transactions
 GROUP BY 
     CASE 
@@ -128,6 +129,26 @@ GROUP BY
             THEN CONCAT('GUEST_', InvoiceNo)
         ELSE CustomerID
     END;
+-------------------------------------------------------------------------------   
+-------------------------------------------------------------------------------   
+
+/* Recalculate Customer Types
+   Rule: If a customer has spent more than £5,000 Lifetime, mark as Wholesale.
+   Otherwise, Retail.
+*/
+UPDATE gold.dim_customer
+SET Customer_Type = 
+    CASE 
+        -- Check the fact table for total revenue per customer
+        WHEN (
+            SELECT SUM(LineRevenue) 
+            FROM gold.fact_sales f 
+            WHERE f.Customer_SK = gold.dim_customer.Customer_SK
+        ) > 5000 THEN 'Wholesale'
+        ELSE 'Retail'
+    END;
+-------------------------------------------------------------------------------  
+-------------------------------------------------------------------------------   
 
 PRINT '✓ gold.dim_customer populated';
 --================================================================
@@ -286,6 +307,23 @@ WHERE
     -- REMOVED: f.Quantity > 0 
     -- REMOVED: f.InvoiceNo NOT LIKE 'C%'
 
+------------------------------------
+/* Update gold.fact_sales to include the Hour of the transaction */
+
+-- 1. Add the column
+ALTER TABLE gold.fact_sales
+ADD [Hour] INT;
+GO
+
+-- 2. Populate it using the Silver data
+UPDATE f
+SET [Hour] = DATEPART(HOUR, s.InvoiceDate)
+FROM gold.fact_sales f
+JOIN silver.flat_transactions s ON f.InvoiceNo = s.InvoiceNo
+WHERE s.InvoiceDate IS NOT NULL;
+--------------------------------
+
+
 PRINT '✓ gold.fact_sales populated with Returns included';
 --================================================================
 PRINT '------------------------------------------------';
@@ -313,3 +351,26 @@ CREATE NONCLUSTERED INDEX IX_gold_dim_customer_CustomerID
 PRINT '✓ Indexes created successfully';
 PRINT '------------------------------------------------';
 PRINT 'GOLD LAYER BUILD COMPLETE';
+
+
+
+-- SELECT 
+--     c.Customer_Type,
+--     COUNT(DISTINCT c.Customer_SK) AS Total_Customers,
+--     SUM(f.LineRevenue) AS Total_Revenue,
+    
+--     -- Calculate Average Spend per Customer Type
+--     SUM(f.LineRevenue) / COUNT(DISTINCT c.Customer_SK) AS Avg_Revenue_Per_Customer,
+    
+--     -- Calculate % of Total Revenue
+--     FORMAT(SUM(f.LineRevenue) / (SELECT SUM(LineRevenue) FROM gold.fact_sales), 'P') AS Revenue_Share
+-- FROM gold.dim_customer c
+-- JOIN gold.fact_sales f 
+--     ON c.Customer_SK = f.Customer_SK
+-- GROUP BY c.Customer_Type;
+
+
+-- SELECT 
+--     SUM(CASE WHEN Order_Status = 'Transaction' THEN LineRevenue ELSE 0 END) AS Sales_Revenue,
+--     SUM(CASE WHEN Order_Status = 'Return' THEN LineRevenue ELSE 0 END) AS Returns_Revenue
+-- FROM gold.fact_sales;
